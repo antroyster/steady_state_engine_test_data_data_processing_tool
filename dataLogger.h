@@ -20,8 +20,12 @@ class dataLogger{
     void getData(std::ifstream& insertedFile);
     private:
         std::pair<double,double> criteria;
-        std::vector<std::pair<std::string,std::string>> channels;
         std::vector<std::string> metadata;     
-        std::vector<double> inputData; 
+        struct Channel {
+            std::vector<double>data;
+            std::string id;
+            std::string units;
+        };
+        std::vector<Channel> channels;
 };
 #endif 

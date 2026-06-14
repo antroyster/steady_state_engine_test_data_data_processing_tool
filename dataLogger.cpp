@@ -98,23 +98,22 @@ void dataLogger::getChannels(std::ifstream& insertedFile){
     std::string parsed;
     while(std::getline(sLine6,parsed,'\t'))
         {
-            dataLogger::channels.push_back({parsed,""});       
+            dataLogger::channels.push_back({{},parsed,""});       
 
         }
     int j = 0;
     while(std::getline(sLine7,parsed,'\t'))
         { 
-            dataLogger::channels[j].second = parsed;             
+            dataLogger::channels[j].units = parsed;             
             j++;
         }
     #ifdef DEBUG
         for(auto it : dataLogger::channels){
-            std::cout<<"debug: channel name is "<<it.first<<std::endl;
-            std::cout<<"debug: channel units are "<<it.second<<std::endl;
+            std::cout<<"debug: channel name is "<<it.id<<std::endl;
+            std::cout<<"debug: channel units are "<<it.units<<std::endl;
         }
     #endif
         
-
 }
 
 
