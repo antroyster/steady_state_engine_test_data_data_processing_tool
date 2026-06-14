@@ -33,52 +33,92 @@ void dataLogger::readStore(){
             std::cout<<"debug: file stream created"<<std::endl;
         #endif
         getMetadata(insertedFile);
-
+        getChannels(insertedFile);
         break;
     }
 }
+
+
+
 void dataLogger::getMetadata(std::ifstream& insertedFile){
     #ifdef DEBUG
         std::cout<<"debug: getMetadata() called"<<std::endl;
     #endif
     std::string line;
-    for (int i = 0; i < 4; i++)
-    {
-        #ifdef DEBUG
-            std::cout<<"debug: reading line "<<i<<std::endl;
-        #endif
-        std::getline(insertedFile,line);
-        if (i ==3){
-            #ifdef DEBUG
-                std::cout<<"debug: line read from file"<<std::endl;
-                std::cout<<line<<std::endl;
-            #endif
-            std::stringstream sLine(line);
-            std::string parsed;
+    std::getline(insertedFile,line);
+    std::getline(insertedFile,line);
+    std::getline(insertedFile,line);
+    std::getline(insertedFile,line);
 
-            for (int j=0; j<11;j++){
-                std::getline(sLine,parsed,'\t');
+    #ifdef DEBUG
+        std::cout<<"debug: line read from file"<<std::endl;
+        std::cout<<line<<std::endl;
+    #endif
+    std::stringstream sLine(line);
+    std::string parsed;
+
+    while(std::getline(sLine,parsed,'\t'))
+    {
+        dataLogger::metadata.push_back(parsed);
+        #ifdef DEBUG
+            std::cout<<"debug: metadata element created" << std::endl;
+        #endif
                 
-                dataLogger::metadata.push_back(parsed);
-                
-                #ifdef DEBUG
-                    std::cout<<"debug: metadata parsed and stored"<<std::endl;
-                    std::cout<<dataLogger::metadata[j]<<std::endl;
-                #endif
-            }            
-            }
-        }
-    for (auto element = dataLogger::metadata.begin(); element != dataLogger::metadata.end(); ++element){
+    }            
+            
+        
+    for (auto element = dataLogger::metadata.begin(); element != dataLogger::metadata.end();){
             if (element->size() < 3){
                     element = dataLogger::metadata.erase(element);
             }
+            else{
+                ++element;
+            }
+        #ifdef DEBUG
+            std::cout<<"debug: metadata element erased" << std::endl;
+        #endif
     }
     #ifdef DEBUG
+       
         for(auto it : dataLogger::metadata){
              std::cout<<"debug: metadata element is "<<it<<std::endl;
         }
     #endif
+}
+
+void dataLogger::getChannels(std::ifstream& insertedFile){
+    std::string line;
+    std::string line6;
+    std::string line7;
+    std::getline(insertedFile,line);
+    std::getline(insertedFile,line6);
+    std::getline(insertedFile,line7);
+    std::stringstream sLine6(line6);
+    std::stringstream sLine7(line7);
+    std::string parsed;
+    while(std::getline(sLine6,parsed,'\t'))
+        {
+            dataLogger::channels.push_back({parsed,""});       
+
         }
-    
+    int j = 0;
+    while(std::getline(sLine7,parsed,'\t'))
+        { 
+            dataLogger::channels[j].second = parsed;             
+            j++;
+        }
+    #ifdef DEBUG
+        for(auto it : dataLogger::channels){
+            std::cout<<"debug: channel name is "<<it.first<<std::endl;
+            std::cout<<"debug: channel units are "<<it.second<<std::endl;
+        }
+    #endif
+        
+
+}
+
+
+
+
     
 

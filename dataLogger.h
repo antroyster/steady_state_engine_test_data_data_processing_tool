@@ -16,8 +16,11 @@ class dataLogger{
     dataLogger() = default;
     void readStore();
     void getMetadata(std::ifstream& insertedFile);
+    void getChannels(std::ifstream& insertedFile);
+    void getData(std::ifstream& insertedFile);
     private:
         std::pair<double,double> criteria;
+        std::vector<std::pair<std::string,std::string>> channels;
         std::vector<std::string> metadata;     
         std::vector<double> inputData; 
 };
