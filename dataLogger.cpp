@@ -33,7 +33,17 @@ void dataLogger::readStore(){
             std::cout<<"debug: file stream created"<<std::endl;
         #endif
         getMetadata(insertedFile);
+        #ifdef DEBUG
+            std::cout<<"debug: metadata generated"<<std::endl;
+        #endif
         getChannels(insertedFile);
+        #ifdef DEBUG
+            std::cout<<"debug: channel info generated"<<std::endl;
+        #endif
+        getData(insertedFile);
+        #ifdef DEBUG
+            std::cout<<"debug: channel data generated"<<std::endl;
+        #endif
         break;
     }
 }
@@ -114,6 +124,55 @@ void dataLogger::getChannels(std::ifstream& insertedFile){
         }
     #endif
         
+}
+void dataLogger::getData(std::ifstream& insertedFile){
+    #ifdef DEBUG
+            std::cout<<"debug: getData called"<<std::endl;
+        #endif
+    std::string line;
+    std::string parsed;
+    while(getline(insertedFile,line)){
+        #ifdef DEBUG
+            std::cout<<"debug: while files exist in the document loop"<<std::endl;
+        #endif
+        std::stringstream sLine(line);
+        int i=0;
+        while(getline(sLine,parsed,'\t')){
+            try{
+                dataLogger::channels[i].data.push_back(std::stod(parsed));
+                i++;
+            } catch (std::invalid_argument& error){
+                dataLogger::channels[i].data.push_back(std::numeric_limits<double>::quiet_NaN());
+                i++;
+                #ifdef DEBUG
+                    std::cout<<"debug: skipping invalid argument"<<parsed<<std::endl;
+                #endif
+            }
+
+        }
+    }
+    #ifdef DEBUG
+        for(auto it : dataLogger::channels){
+            std::cout<<"debug: channel name is "<<it.id<<std::flush;
+            std::cout<<" debug: channel units are "<<it.units<<std::flush;
+            for (int i = 0; i < 2; i++)
+            {
+                try{
+                std::cout<<" value " << i+1 << ": = " << it.data[i]<< std::endl;
+                }catch(std::invalid_argument& error){
+                    continue;
+                #ifdef DEBUG
+                    std::cout<<"debug: skipping invalid argument"<<it.data[i]<<std::endl;
+                #endif
+                }
+            }
+            
+        }
+    #endif
+    
+
+
+
 }
 
 
