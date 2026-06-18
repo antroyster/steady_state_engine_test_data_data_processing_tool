@@ -11,21 +11,25 @@
 #include <utility>
 #include <string>
 
-class dataLogger{
-    public:
+class dataLogger {
+public:
     dataLogger() = default;
+    struct Channel {
+        std::vector<double>data;
+        std::string id;
+        std::string units;
+        int index;
+    };
     void readStore();
     void getMetadata(std::ifstream& insertedFile);
     void getChannels(std::ifstream& insertedFile);
     void getData(std::ifstream& insertedFile);
-    private:
-        std::pair<double,double> criteria;
-        std::vector<std::string> metadata;     
-        struct Channel {
-            std::vector<double>data;
-            std::string id;
-            std::string units;
-        };
-        std::vector<Channel> channels;
+    const std::vector<Channel>& getchannelsData() const;
+private:
+    std::vector<std::string> metadata;
+    std::vector<Channel> channels;
+    
 };
-#endif 
+
+#endif // DATALOGGER_H
+
