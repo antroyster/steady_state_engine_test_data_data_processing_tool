@@ -1,6 +1,8 @@
+// steady_state_engine_test_data_processing_tool.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
 
 #include "dataLogger.h"
-//#include "dataAnalysis.h"
+#include "dataAnalysis.h"
 //#include "dataDisplay.h"
 #include <iostream> 
 #include <fstream>
@@ -13,16 +15,16 @@
 int main()
 {
     try {
-       dataLogger dataLogger_i;   // create object
-       dataLogger_i.readStore();
+
+        dataLogger dataLogger_i;   // create object
+		dataAnalysis dataAnalysis_i; // create object
+        dataLogger_i.readStore();
+		dataAnalysis_i.generatestabilityVector(dataLogger_i.getchannelsData(), dataAnalysis_i.stabilityRequirements);
+        dataAnalysis_i.askstabilityRequirements(dataLogger_i.getchannelsData(), dataAnalysis_i.stabilityRequirements);
     }
     catch (const std::exception& error) {
         std::cerr << error.what() << std::endl;
     }
 
-   // std::pair<double,double>& criteriaRef = dataAnalysis.inputCriteria();
-    //std::vector<double>& results = dataAnalysis.pruning(std::pair<int,int>& criteriaRef);
-    //dataLogger.write();
-    //dataDisplay.terminalReport(results);
     return 0;
 }
