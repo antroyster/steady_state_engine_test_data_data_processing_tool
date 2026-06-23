@@ -21,13 +21,16 @@ public:
         int index;
     };
     void readStore();
+    void storeWrite(const std::vector<Channel>& channels, const std::vector<std::string>& metadata, std::vector<int>& rowInclusion,size_t numofRows);
     void getMetadata(std::ifstream& insertedFile);
     void getChannels(std::ifstream& insertedFile);
     void getData(std::ifstream& insertedFile);
     const std::vector<Channel>& getchannelsData() const;
+    const std::vector<std::string>& getmetadata() const; 
 private:
     std::vector<std::string> metadata;
     std::vector<Channel> channels;
+    std::string fileName;
     
 };
 
