@@ -29,6 +29,7 @@ void dataLogger::readStore() {
 #ifdef DEBUG
         std::cout << "debug: file opened" << std::endl;
 #endif
+		dataLogger::fileName = folderEntry.path().stem().string();
 
         if (!insertedFile) {
             throw std::runtime_error("Failed to open file");
@@ -50,6 +51,7 @@ void dataLogger::readStore() {
 #endif
         break;
     }
+
 }
 
 
@@ -181,8 +183,44 @@ void dataLogger::getData(std::ifstream& insertedFile) {
 }
 const std::vector<dataLogger::Channel>& dataLogger::getchannelsData() const {
     return dataLogger::channels;
-};
+}
+const std::vector<std::string>& dataLogger::getmetadata() const {
+	return dataLogger::metadata;
+}
+void dataLogger::storeWrite(const std::vector<dataLogger::Channel>& channels, const std::vector<std::string>& metadata, std::vector<int>& rowInclusion,size_t numofRows){
+    std::filesystem::path outputDirectory = "processing_output";
+	if (!std::filesystem::exists(outputDirectory)) {
+		std::filesystem::create_directory(outputDirectory);
+	}
+    std::ofstream outputFile(outputDirectory / (dataLogger::fileName + "_processed.txt"));
+    if (!outputFile) {
+        throw std::runtime_error("Failed to create output file");
+    }
 
+	for (auto& element : metadata) {
+		outputFile << element << "\t";
+	}
+	outputFile << "\n";
+    for (auto& element : channels) {
+        outputFile << element.id << "\t";
+    }
+    outputFile << "\n";
+    for (auto& element : channels) {
+        outputFile << element.units << "\t";
+    }
+    outputFile << "\n";
+    for(size_t i = 0; i < numofRows; i++) {
+		if (rowInclusion[i] == 0) {
+			continue;
+		}
+
+        for (auto& element : channels) {
+            
+            outputFile << element.data[i] << "\t";
+        }
+        outputFile << "\n";
+    }
+}
 
 
 
