@@ -64,6 +64,7 @@ public:
 	void askstabilityRequirements(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements);
 	std::vector<int> stabcPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id);
     std::vector<int> minmaxPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id, bool minmax);
+    std::vector<int> stabROCPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id);
     size_t numofRows(const std::vector<dataLogger::Channel>& channels);
     void triggerFlip(dataAnalysis::DataInclusion& result, size_t& numofRows, bool triggerfliptype);
     std::vector<int>logicalandComparison(std::vector<std::vector<int>>& comparitor, size_t numofRows);
