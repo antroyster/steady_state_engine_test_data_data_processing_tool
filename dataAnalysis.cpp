@@ -11,7 +11,7 @@
 #include <limits>
 #include <iomanip>
 #include <algorithm>
-#include <functional>;
+#include <functional>
 #define DEBUG
 
 void dataAnalysis::generatestabilityVector(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements) {
@@ -105,6 +105,144 @@ void dataAnalysis::stabilityCheck(dataAnalysis::StabilityCheck& stabilityCheck_i
         stabilityCheck_i.trigger = false;
     }
 }
+std::vector<int> dataAnalysis::stabROCPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id) {
+    dataAnalysis::DataInclusion result;
+    double criteria = stabilityRequirements[id].stabilityrocTrigger;
+    size_t logsSample = stabilityRequirements[id].stabilitywaitROC;
+    size_t logsATrig = stabilityRequirements[id].logsafterTrigger;
+    size_t logsATrig_do = -1;
+    size_t logsBTrig = stabilityRequirements[id].logsbeforeTrigger;
+    bool positvenegative = true;
+    bool signCriteria = (criteria >= 0) ? true : false;
+    
+    
+    if (naCheckBool(logsATrig))
+    {
+        logsATrig = 0;
+    }
+    if (naCheckBool(logsBTrig))
+    {
+        logsBTrig = 0;
+    }
+    if (naCheckBool(logsSample))
+    {
+        logsSample = 0;
+    }
+    for (size_t i = 0; i < numofRows; i++)
+    {
+        result.id = id;
+        result.rowInclusion.push_back(0);
+        result.triggerNegative.push_back(0);
+        result.triggerPositive.push_back(0);
+
+
+
+    }
+#ifdef DEBUG
+    std::cout << "debug: generated result vector" << std::endl;
+#endif // DEBUG
+    
+    
+    for (size_t i = logsSample; i < (numofRows); i++)
+    {
+        try {
+            auto current = channels[id].data[i];
+            auto previous = channels[id].data[i - logsSample];
+            auto rateofChange = (current - previous) / logsSample;
+            bool signData = (rateofChange >= 0) ? true : false;
+#ifdef DEBUG
+            if (i > 1300 || i < 20)
+            {
+                std::cout << "debug: current value at " << i << " is " << current << " and previous value at " << previous << std::endl;
+                std::cout << "debug: rate of change at " << i << " is " << rateofChange << " and criteria is " << criteria << std::endl;
+                std::cout << "debug: signData is " << signData << " and signCriteria is " << signCriteria << std::endl;
+                
+            }
+#endif // DEBUG
+
+            if ((std::abs(rateofChange) >= std::abs(criteria)) && positvenegative == true)
+            {
+
+                
+                if ((signCriteria != signData))
+                {
+                    continue;
+                }
+                positvenegative = false;
+#ifdef DEBUG
+                std::cout << "debug: positvenegative set to " << positvenegative << " at row " << i << std::endl;
+#endif // DEBUG
+                if (logsBTrig)
+                {
+
+                    result.triggerPositive.at(i+1 - logsBTrig) = 1;
+                }
+                else
+                {
+                    result.triggerPositive.at(i+1) = 1;
+                }
+
+                if (logsATrig)
+                {
+                    logsATrig_do = logsATrig + i + 1;
+                }
+                
+            }
+            else if (positvenegative == false)
+            {
+                if ((std::abs(rateofChange) <= std::abs(criteria)) && (signCriteria == signData))
+                {
+
+                    positvenegative = true;
+#ifdef DEBUG
+                    std::cout << "debug: positvenegative set to " << positvenegative << " at row " << i << std::endl;
+#endif // DEBUG
+                    result.triggerNegative.at(i) = 1;
+                }
+                else if (signCriteria != signData)
+                {
+                    positvenegative = true;
+#ifdef DEBUG
+                    std::cout << "debug: positvenegative set to " << positvenegative << " at row " << i << std::endl;
+#endif // DEBUG
+                    result.triggerNegative.at(i) = 1;
+                }
+
+            }
+            if (logsATrig_do == i)
+            {
+                for (size_t j = (i - 2); j > (i - 1 - logsATrig); j--)
+                {
+                    result.triggerNegative.at(j) = 0;
+                }
+                result.triggerNegative.at(i - 1) = 1;
+                positvenegative = true;
+#ifdef DEBUG
+                std::cout << "debug: positvenegative set to " << positvenegative << " at row " << i << std::endl;
+#endif // DEBUG
+                logsATrig_do = -1;
+            }
+		}
+        catch (const std::out_of_range&) {
+            std::cout << "debug: out of range exception at " << i << std::endl;
+            break;
+        }
+    }
+    if (logsATrig_do != -1 && !naCheckBool(logsATrig))
+    {
+        result.triggerNegative.at(numofRows - 1) = 1;
+    }
+    dataAnalysis::triggerFlip(result, numofRows, 0);
+#ifdef DEBUG
+    for (size_t i = 0; i < numofRows; i++)
+    {
+        std::cout << "debug: triggerNegative/triggerPositive Vector: " << i << ":" << result.triggerNegative[i] << "/" << result.triggerPositive[i] << " row inclusion: " << result.rowInclusion[i] << std::endl;
+    }
+#endif // DEBUG
+
+    return result.rowInclusion;
+
+}
 
 std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id) {
     dataAnalysis::DataInclusion result;
@@ -162,16 +300,16 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
         auto current = channels[id].data[i];
 
         auto negative_trigger =[](auto current, auto previous, double criteria, double range) {
-            return (current <= (criteria + range) && previous > (criteria + range)) || (current <= (criteria - range) && previous > (criteria - range));
+            return (current <= ( (criteria + range) && previous > (criteria + range)) || (current <= (criteria - range) && previous > (criteria - range)) );
         };
-        auto negative_no_criteria_trigger = [positvenegative](auto current, auto previous, double criteria, double range) {
-            return ((current > criteria + range || current < criteria - range) && positvenegative == false);
+        auto negative_no_criteria_trigger = [&positvenegative](auto current, auto previous, double criteria, double range) {
+            return ((current > (criteria + range )|| current < (criteria - range)) && positvenegative == false);
             };
         auto positive_trigger =[](auto current, auto previous, double criteria, double range) {
             return (current >= (criteria - range) && previous < (criteria - range)) || (current >= (criteria + range) && previous < (criteria + range));
         };
-		auto positve_no_criteria_trigger = [positvenegative](auto current, auto previous, double criteria, double range) {
-			return ((current > criteria + range || current < criteria - range) && positvenegative == true);
+		auto positve_no_criteria_trigger = [&positvenegative](auto current, auto previous, double criteria, double range) {
+			return ((current > (criteria + range) || current < (criteria - range)) && positvenegative == true);
 			};
 
         
@@ -256,9 +394,9 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
 
             if (logsATrig_do == i)
             {
-                //for (size_t j = (i - 2); j > (i - 1 - logsATrig); j--)
+                for (size_t j = (i - 2); j > (i - 1 - logsATrig); j--)
                 {
-					//result.triggerPositive.at(j) = 0;
+					result.triggerNegative.at(j) = 0;
                 }
                 #ifdef DEBUG
 				std::cout << "debug: logsATrig_do at " << i << std::endl;
@@ -290,7 +428,7 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
             
         }
 
-        catch (const std::out_of_range& error) {
+        catch (const std::out_of_range& ) {
             break;
         }
 
@@ -395,6 +533,10 @@ void dataAnalysis::dataPrune(const std::vector<dataLogger::Channel>& channels, s
 		{
 			results_i.push_back(dataAnalysis_i.stabcPruning(channels, stabilityRequirements, numofRows, i));
 		}
+        if(!naCheckBool(elements.stabilityrocTrigger))
+        {
+            results_i.push_back(dataAnalysis_i.stabROCPruning(channels, stabilityRequirements, numofRows, i));
+        }
 		results.push_back(dataAnalysis_i.logicalandComparison(results_i, numofRows));
         i++;
 
