@@ -359,18 +359,16 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
 
                     }
 
-                    if (logsBTrig)
+                    if (stabilityCheck_i.stabcheckATrig == 0)
                     {
-                        if (stabilityCheck_i.stabcheckATrig == 0)
+                        if (logsBTrig)
                         {
                             result.triggerPositive.at(i - logsBTrig) = 1;
                         }
-                    }
-                    else
-                    {
-
-
-                        result.triggerPositive.at(i) = 1;
+                        else
+                        {
+                            result.triggerPositive.at(i) = 1;
+                        }
                     }
 
                     if (logsATrig)
