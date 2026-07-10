@@ -299,14 +299,14 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
         auto previous = channels[id].data[i - 1];
         auto current = channels[id].data[i];
 
-        auto negative_trigger =[](auto current, auto previous, double criteria, double range) {
-            return (current <= ( (criteria + range) && previous > (criteria + range)) || (current <= (criteria - range) && previous > (criteria - range)) );
+        auto negative_trigger =[&positvenegative](auto current, auto previous, double criteria, double range) {
+            return ((current > (criteria + range) || current < (criteria - range)) && positvenegative == false);
         };
         auto negative_no_criteria_trigger = [&positvenegative](auto current, auto previous, double criteria, double range) {
             return ((current > (criteria + range )|| current < (criteria - range)) && positvenegative == false);
             };
-        auto positive_trigger =[](auto current, auto previous, double criteria, double range) {
-            return (current >= (criteria - range) && previous < (criteria - range)) || (current >= (criteria + range) && previous < (criteria + range));
+        auto positive_trigger =[&positvenegative](auto current, auto previous, double criteria, double range) {
+            return (current >= (criteria - range) && current <= (criteria + range)) && positvenegative == true;
         };
 		auto positve_no_criteria_trigger = [&positvenegative](auto current, auto previous, double criteria, double range) {
 			return ((current > (criteria + range) || current < (criteria - range)) && positvenegative == true);
@@ -447,54 +447,23 @@ std::vector<int> dataAnalysis::stabcPruning(const std::vector<dataLogger::Channe
 
 }
 std::vector<int> dataAnalysis::minmaxPruning(const std::vector<dataLogger::Channel>& channels, std::vector<StabilityRequirement>& stabilityRequirements, size_t& numofRows, int id,bool minmax) {
-    dataAnalysis::DataInclusion result;
-    double criteria;
-    if (minmax == false)
-    {
-        criteria = stabilityRequirements[id].min;
-    }
-	else if (minmax == true)
-	{
-		criteria = stabilityRequirements[id].max;
-	}
+    double criteria = minmax ? stabilityRequirements[id].max : stabilityRequirements[id].min;
+    std::vector<int> rowInclusion;
+    rowInclusion.reserve(numofRows);
 
     for (size_t i = 0; i < numofRows; i++)
     {
-        result.id = id;
-        result.rowInclusion.push_back(minmax);
-        result.triggerNegative.push_back(0);
-        result.triggerPositive.push_back(0);
-
-    }
-    for (size_t i = 1; i < numofRows; i++)
-    {
-        auto previous = channels[id].data[i-1];
         auto current = channels[id].data[i];
-        #ifdef DEBUG
-		//std::cout << "debug: previous value at "<< i << " is " << previous << "and current is " << current << std::endl;
-        #endif 
-
-
-        if (current <= criteria && previous > criteria)
-            {
-            result.triggerNegative[i] = 1;
-            }
-        else if (current >= criteria && previous < criteria)
-        {
-            result.triggerPositive[i] = 1;
-        }
-
+        rowInclusion.push_back(minmax ? (current <= criteria) : (current >= criteria));
     }
-    dataAnalysis::triggerFlip(result, numofRows, minmax);
 #ifdef DEBUG
     for (size_t i = 0; i < numofRows; i++)
     {
-        //std::cout << "debug: triggerNegative/triggerPositive Vector: " << i << ":" << result.triggerNegative[i] << "/" << result.triggerPositive[i] << std::endl;
-		std::cout << "debug: rowInclusion Vector: " << i << ":" << result.rowInclusion[i] << std::endl;
+		std::cout << "debug: rowInclusion Vector: " << i << ":" << rowInclusion[i] << std::endl;
     }
     std::cout << "debug: ran minmaxPruning" << std::endl;
 #endif
-    return result.rowInclusion;
+    return rowInclusion;
 }
 std::vector<int> dataAnalysis::logicalandComparison(std::vector<std::vector<int>>& comparitor, size_t numofRows) {
     std::vector<int> results;
